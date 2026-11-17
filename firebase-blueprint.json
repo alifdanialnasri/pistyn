@@ -1,0 +1,156 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user profile in the system.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "email"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "A vehicle owned by a user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "name": { "type": "string" },
+        "plateNumber": { "type": "string" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "number" },
+        "vin": { "type": "string" },
+        "engineNumber": { "type": "string" },
+        "purchaseDate": { "type": "string", "format": "date" },
+        "purchaseMileage": { "type": "number" },
+        "currentMileage": { "type": "number" },
+        "mileageUpdatedAt": { "type": "string", "format": "date" },
+        "roadTaxExpiry": { "type": "string", "format": "date" },
+        "insuranceExpiry": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["active", "sold"] },
+        "soldDate": { "type": "string", "format": "date" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "name", "plateNumber"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "A maintenance service log for a vehicle.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "mileage": { "type": "number" },
+        "description": { "type": "string" },
+        "cost": { "type": "number" },
+        "serviceType": { "type": "string", "enum": ["maintenance", "repair", "upgrade", "inspection", "other"] },
+        "scheduleIds": { "type": "array", "items": { "type": "string" } },
+        "lineItems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "kind": { "type": "string", "enum": ["part", "labour", "other"] },
+              "quantity": { "type": "number" },
+              "unitPrice": { "type": "number" },
+              "warrantyUntil": { "type": "string", "format": "date" }
+            }
+          }
+        },
+        "workshop": { "type": "string" },
+        "workshopPhone": { "type": "string" },
+        "workshopLocation": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "notes": { "type": "string" },
+        "receiptUrl": { "type": "string", "description": "Legacy single receipt; moved into attachments when edited" },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "name": { "type": "string" }, "url": { "type": "string" }, "contentType": { "type": "string" } }
+          }
+        },
+        "partIds": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "vehicleId", "ownerId", "date", "mileage", "description", "cost"]
+    },
+    "Part": {
+      "title": "Part",
+      "description": "A spare part in the user's inventory.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "purchaseLink": { "type": "string" },
+        "notes": { "type": "string" },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["preferred", "neutral", "not recommended"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "name", "status"]
+    },
+    "ScheduleItem": {
+      "title": "Schedule Item",
+      "description": "A recurring maintenance task for one vehicle, due by KM and/or months.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "intervalKm": { "type": "number" },
+        "intervalMonths": { "type": "number" },
+        "lastDoneDate": { "type": "string", "format": "date" },
+        "lastDoneMileage": { "type": "number" },
+        "estimatedCost": { "type": "number" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "vehicleId", "name"]
+    },
+    "Issue": {
+      "title": "Issue",
+      "description": "A problem noticed on a vehicle or work recommended by a workshop.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "title": { "type": "string" },
+        "details": { "type": "string" },
+        "source": { "type": "string", "enum": ["observed", "workshop"] },
+        "severity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "status": { "type": "string", "enum": ["open", "resolved"] },
+        "reportedDate": { "type": "string", "format": "date" },
+        "reportedMileage": { "type": "number" },
+        "dueDate": { "type": "string", "format": "date" },
+        "dueMileage": { "type": "number" },
+        "resolvedDate": { "type": "string", "format": "date" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "vehicleId", "title", "source", "severity", "status", "reportedDate"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": { "schema": "User", "description": "User profiles." },
+    "vehicles/{vehicleId}": { "schema": "Vehicle", "description": "Vehicles owned by users." },
+    "services/{serviceId}": { "schema": "Service", "description": "Service records for vehicles." },
+    "parts/{partId}": { "schema": "Part", "description": "Spare parts library." },
+    "schedules/{scheduleId}": { "schema": "ScheduleItem", "description": "Maintenance schedule items per vehicle." },
+    "issues/{issueId}": { "schema": "Issue", "description": "Issues and workshop recommendations per vehicle." }
+  }
+}

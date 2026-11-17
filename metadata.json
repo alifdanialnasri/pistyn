@@ -1,0 +1,8 @@
+{
+  "name": "Pistyn",
+  "description": "A high-performance car maintenance tracking system with a racing-inspired dashboard for car enthusiasts.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}

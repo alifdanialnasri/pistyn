@@ -1,0 +1,250 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && ownerId == request.auth.uid;
+    }
+
+    // The app owner. Must match ADMIN_EMAIL in src/lib/adminConfig.ts. Google sign-in emails are always verified.
+    function isAdmin() {
+      return isSignedIn() &&
+             request.auth.token.email == 'alifdanialnasrii@gmail.com' &&
+             request.auth.token.email_verified == true;
+    }
+
+    // Optional fields: either absent, or the right type within limits
+    function optString(data, key, max) {
+      return !(key in data) || (data[key] is string && data[key].size() <= max);
+    }
+
+    function optNumber(data, key) {
+      return !(key in data) || (data[key] is number && data[key] >= 0);
+    }
+
+    function optList(data, key, max) {
+      return !(key in data) || (data[key] is list && data[key].size() <= max);
+    }
+
+    function optEnum(data, key, values) {
+      return !(key in data) || data[key] in values;
+    }
+
+    function ownsVehicle(vehicleId) {
+      return vehicleId is string &&
+             exists(/databases/$(database)/documents/vehicles/$(vehicleId)) &&
+             get(/databases/$(database)/documents/vehicles/$(vehicleId)).data.ownerId == request.auth.uid;
+    }
+
+    // Create: only known fields. Update: only editable fields may change (ownerId and createdAt never do).
+    function createsOnly(fields) {
+      return incoming().keys().hasOnly(fields.concat(['ownerId', 'createdAt']));
+    }
+
+    function changesOnly(fields) {
+      return incoming().ownerId == existing().ownerId &&
+             incoming().diff(existing()).affectedKeys().hasOnly(fields.concat(['updatedAt']));
+    }
+
+    // --- Entity Validation ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email']) &&
+             data.email is string && data.email.size() <= 200 &&
+             optString(data, 'displayName', 100) && optString(data, 'photoURL', 500) &&
+             optString(data, 'lastActiveAt', 30) &&
+             optEnum(data, 'plan', ['free', 'pro', 'fleet', 'workshop']) &&
+             optString(data, 'planExpiresAt', 30) && optString(data, 'adminNotes', 1000);
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasOnly(['uid', 'email', 'plan', 'amount', 'periodMonths', 'method', 'paidDate',
+                                  'reference', 'notes', 'recordedAt']) &&
+             data.keys().hasAll(['uid', 'email', 'plan', 'amount', 'periodMonths', 'method', 'paidDate', 'recordedAt']) &&
+             data.uid is string && data.email is string && data.email.size() <= 200 &&
+             data.plan in ['pro', 'fleet', 'workshop', 'other'] &&
+             data.amount is number && data.amount >= 0 &&
+             data.periodMonths is number && data.periodMonths >= 0 && data.periodMonths <= 120 &&
+             data.method in ['duitnow', 'bank', 'cash', 'ewallet', 'other'] &&
+             data.paidDate is string && data.paidDate.size() <= 30 &&
+             data.recordedAt is string &&
+             optString(data, 'reference', 100) && optString(data, 'notes', 500);
+    }
+
+    function vehicleFields() {
+      return ['name', 'plateNumber', 'make', 'model', 'year', 'vin', 'engineNumber', 'purchaseDate', 'purchaseMileage',
+              'currentMileage', 'mileageUpdatedAt', 'roadTaxExpiry', 'insuranceExpiry', 'status', 'soldDate', 'notes'];
+    }
+
+    function isValidVehicle(data) {
+      return data.keys().hasAll(['ownerId', 'name', 'plateNumber']) &&
+             data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
+             data.plateNumber is string && data.plateNumber.size() <= 20 &&
+             optString(data, 'make', 50) && optString(data, 'model', 50) && optNumber(data, 'year') &&
+             optString(data, 'vin', 40) && optString(data, 'engineNumber', 40) &&
+             optString(data, 'purchaseDate', 30) && optNumber(data, 'purchaseMileage') &&
+             optNumber(data, 'currentMileage') && optString(data, 'mileageUpdatedAt', 30) &&
+             optString(data, 'roadTaxExpiry', 30) && optString(data, 'insuranceExpiry', 30) &&
+             optEnum(data, 'status', ['active', 'sold']) && optString(data, 'soldDate', 30) &&
+             optString(data, 'notes', 1000);
+    }
+
+    function serviceFields() {
+      return ['vehicleId', 'date', 'mileage', 'description', 'cost', 'serviceType', 'scheduleIds', 'lineItems',
+              'workshop', 'workshopPhone', 'workshopLocation', 'invoiceNumber', 'notes', 'receiptUrl', 'attachments', 'partIds'];
+    }
+
+    function isValidService(data) {
+      return data.keys().hasAll(['vehicleId', 'ownerId', 'date', 'mileage', 'description', 'cost']) &&
+             data.ownerId == request.auth.uid &&
+             data.vehicleId is string &&
+             data.date is string && data.date.size() <= 30 &&
+             data.mileage is number && data.mileage >= 0 &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.cost is number && data.cost >= 0 &&
+             optEnum(data, 'serviceType', ['maintenance', 'repair', 'upgrade', 'inspection', 'other']) &&
+             optList(data, 'scheduleIds', 50) && optList(data, 'lineItems', 100) &&
+             optString(data, 'workshop', 200) && optString(data, 'workshopPhone', 30) &&
+             optString(data, 'workshopLocation', 200) && optString(data, 'invoiceNumber', 50) &&
+             optString(data, 'notes', 2000) && optString(data, 'receiptUrl', 500) &&
+             optList(data, 'attachments', 20) && optList(data, 'partIds', 100);
+    }
+
+    function partFields() {
+      return ['name', 'category', 'purchaseLink', 'notes', 'price', 'status'];
+    }
+
+    function isValidPart(data) {
+      return data.keys().hasAll(['ownerId', 'name', 'status']) &&
+             data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
+             data.status in ['preferred', 'neutral', 'not recommended'] &&
+             optString(data, 'category', 200) && optString(data, 'purchaseLink', 4000) &&
+             optNumber(data, 'price') && optString(data, 'notes', 1000);
+    }
+
+    function scheduleFields() {
+      return ['vehicleId', 'name', 'category', 'intervalKm', 'intervalMonths', 'lastDoneDate', 'lastDoneMileage', 'estimatedCost', 'notes'];
+    }
+
+    function isValidSchedule(data) {
+      return data.keys().hasAll(['ownerId', 'vehicleId', 'name']) &&
+             data.ownerId == request.auth.uid &&
+             data.vehicleId is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             optString(data, 'category', 50) && optNumber(data, 'intervalKm') && optNumber(data, 'intervalMonths') &&
+             optString(data, 'lastDoneDate', 30) && optNumber(data, 'lastDoneMileage') &&
+             optNumber(data, 'estimatedCost') && optString(data, 'notes', 1000);
+    }
+
+    function issueFields() {
+      return ['vehicleId', 'title', 'details', 'source', 'severity', 'status', 'reportedDate', 'reportedMileage',
+              'dueDate', 'dueMileage', 'resolvedDate'];
+    }
+
+    function isValidIssue(data) {
+      return data.keys().hasAll(['ownerId', 'vehicleId', 'title', 'source', 'severity', 'status', 'reportedDate']) &&
+             data.ownerId == request.auth.uid &&
+             data.vehicleId is string &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+             data.source in ['observed', 'workshop'] &&
+             data.severity in ['low', 'medium', 'high'] &&
+             data.status in ['open', 'resolved'] &&
+             data.reportedDate is string && data.reportedDate.size() <= 30 &&
+             optString(data, 'details', 2000) && optNumber(data, 'reportedMileage') &&
+             optString(data, 'dueDate', 30) && optNumber(data, 'dueMileage') && optString(data, 'resolvedDate', 30);
+    }
+
+    // --- Path Rules ---
+
+    // Users create their own profile on the Free plan and may only touch their name and activity date.
+    // Plan, expiry and admin notes can only be changed by the admin.
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidUser(incoming()) &&
+                    incoming().keys().hasOnly(['email', 'displayName', 'photoURL', 'createdAt', 'lastActiveAt', 'plan']) &&
+                    (!('plan' in incoming()) || incoming().plan == 'free');
+      allow update: if isValidUser(incoming()) && incoming().email == existing().email && (
+                      (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'lastActiveAt'])) ||
+                      (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['plan', 'planExpiresAt', 'adminNotes']))
+                    );
+    }
+
+    // Payments are recorded by the admin. Users can see their own.
+    match /payments/{paymentId} {
+      allow get, list: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create, update: if isAdmin() && isValidPayment(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /vehicles/{vehicleId} {
+      allow list: if (isSignedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+      allow get: if isOwner(existing().ownerId);
+      allow create: if isSignedIn() && isValidId(vehicleId) && createsOnly(vehicleFields()) && isValidVehicle(incoming());
+      allow update: if isOwner(existing().ownerId) && changesOnly(vehicleFields()) && isValidVehicle(incoming());
+      allow delete: if isOwner(existing().ownerId);
+    }
+
+    match /services/{serviceId} {
+      allow list: if (isSignedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+      allow get: if isOwner(existing().ownerId);
+      allow create: if isSignedIn() && isValidId(serviceId) && createsOnly(serviceFields()) && isValidService(incoming()) &&
+                    ownsVehicle(incoming().vehicleId);
+      // A service can be moved to another car, but only one you own
+      allow update: if isOwner(existing().ownerId) && changesOnly(serviceFields()) && isValidService(incoming()) &&
+                    (incoming().vehicleId == existing().vehicleId || ownsVehicle(incoming().vehicleId));
+      allow delete: if isOwner(existing().ownerId);
+    }
+
+    match /parts/{partId} {
+      allow list: if (isSignedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+      allow get: if isOwner(existing().ownerId);
+      allow create: if isSignedIn() && isValidId(partId) && createsOnly(partFields()) && isValidPart(incoming());
+      allow update: if isOwner(existing().ownerId) && changesOnly(partFields()) && isValidPart(incoming());
+      allow delete: if isOwner(existing().ownerId);
+    }
+
+    match /schedules/{scheduleId} {
+      allow list: if (isSignedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+      allow get: if isOwner(existing().ownerId);
+      allow create: if isSignedIn() && isValidId(scheduleId) && createsOnly(scheduleFields()) && isValidSchedule(incoming()) &&
+                    ownsVehicle(incoming().vehicleId);
+      allow update: if isOwner(existing().ownerId) && changesOnly(scheduleFields()) && isValidSchedule(incoming()) &&
+                    incoming().vehicleId == existing().vehicleId;
+      allow delete: if isOwner(existing().ownerId);
+    }
+
+    match /issues/{issueId} {
+      allow list: if (isSignedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+      allow get: if isOwner(existing().ownerId);
+      allow create: if isSignedIn() && isValidId(issueId) && createsOnly(issueFields()) && isValidIssue(incoming()) &&
+                    ownsVehicle(incoming().vehicleId);
+      allow update: if isOwner(existing().ownerId) && changesOnly(issueFields()) && isValidIssue(incoming()) &&
+                    incoming().vehicleId == existing().vehicleId;
+      allow delete: if isOwner(existing().ownerId);
+    }
+  }
+}
