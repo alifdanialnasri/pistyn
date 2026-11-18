@@ -19,13 +19,13 @@ export function ColumnChart({ data, label, format = formatMYR }: {
 
   return (
     <figure>
-      <div className="h-6 mb-2 text-xs font-mono text-gray-300" aria-live="polite">
-        {active ? <>{active.full}: <span className="font-bold text-white">{format(active.value)}</span></> : <span className="text-gray-600">Hover or tap a bar for details</span>}
+      <div className="h-6 mb-2 text-sm text-gray-300" aria-live="polite">
+        {active ? <>{active.full}: <span className="font-bold text-white">{format(active.value)}</span></> : <span className="text-gray-600">Tap a bar to see the amount</span>}
       </div>
       <div className="relative h-44 border-b border-white/10" role="img" aria-label={label}>
         {max > 0 && (
           <div className="absolute top-0 left-0 right-0 border-t border-dashed border-white/5">
-            <span className="absolute -top-2 right-0 bg-surface-dark pl-1 text-[10px] font-mono text-gray-600">{format(max)}</span>
+            <span className="absolute -top-2 right-0 bg-surface-dark pl-1 text-[10px] text-gray-600">{format(max)}</span>
           </div>
         )}
         <div className="absolute inset-0 flex items-end gap-[2px] md:gap-2 pt-3">
@@ -55,7 +55,7 @@ export function ColumnChart({ data, label, format = formatMYR }: {
         </div>
       </div>
       <div className="flex gap-[2px] md:gap-2 mt-2">
-        {data.map(d => <span key={d.full} className="flex-1 text-center text-[9px] md:text-[10px] font-mono text-gray-500 uppercase">{d.label}</span>)}
+        {data.map(d => <span key={d.full} className="flex-1 text-center text-[10px] text-gray-500">{d.label}</span>)}
       </div>
       <table className="sr-only">
         <caption>{label}</caption>
@@ -71,7 +71,7 @@ export function BarList({ rows, empty, format = formatMYR }: {
   format?: (value: number) => string;
 }) {
   const max = Math.max(...rows.map(r => r.value), 0);
-  if (!rows.length || max === 0) return <p className="text-gray-500 text-sm italic">{empty}</p>;
+  if (!rows.length || max === 0) return empty ? <p className="text-gray-500 text-sm">{empty}</p> : null;
   return (
     <ul className="space-y-3">
       {rows.map(r => (
@@ -80,8 +80,8 @@ export function BarList({ rows, empty, format = formatMYR }: {
             <span className="text-gray-300 truncate">{r.label}</span>
             <span className="font-mono text-gray-300 whitespace-nowrap">{format(r.value)}</span>
           </div>
-          <div className="h-2 bg-white/5 rounded-r-[4px]">
-            <div className="h-2 rounded-r-[4px]" style={{ width: `${(r.value / max) * 100}%`, backgroundColor: BAR_COLOR }} />
+          <div className="h-2 bg-white/5 rounded-full">
+            <div className="h-2 rounded-full" style={{ width: `${(r.value / max) * 100}%`, backgroundColor: BAR_COLOR }} />
           </div>
         </li>
       ))}

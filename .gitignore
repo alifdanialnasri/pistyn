@@ -10,3 +10,8 @@ coverage/
 # Coursework and media, kept out of git
 Report/
 promo/
+
+# Agent skills (installed locally, not part of the app)
+.agents/
+.claude/
+skills-lock.json
