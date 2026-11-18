@@ -53,7 +53,7 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenBackup, onNewSe
       </div>
 
       {/* Bottom tab bar (Mobile) */}
-      <nav aria-label="Main" className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface-dark/95 backdrop-blur-md border-t border-white/5 pb-[env(safe-area-inset-bottom,0px)]">
+      <nav aria-label="Main" className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface-dark/95 backdrop-blur-md border-t border-white/5 pb-[env(safe-area-inset-bottom,0px)] after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-surface-dark">
         <div className="grid grid-cols-5 h-16">
           {tabItems.slice(0, 2).map(tab => (
             <TabButton key={tab.id} label={tab.label} icon={tab.icon} active={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} />
