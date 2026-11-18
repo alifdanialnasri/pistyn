@@ -13,7 +13,7 @@ import {
 
 interface LineRow { description: string; kind: LineItemKind; quantity: string; unitPrice: string; warrantyUntil: string }
 
-const cellClass = 'w-full min-w-0 bg-black border border-white/10 rounded-lg px-3 py-2 focus:border-racing-red focus:outline-none transition-colors';
+const cellClass = 'w-full min-w-0 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 focus:border-racing-red focus:outline-none transition-colors';
 
 const blankLine = (): LineRow => ({ description: '', kind: 'part', quantity: '1', unitPrice: '', warrantyUntil: '' });
 
@@ -22,11 +22,13 @@ const blankForm = (vehicleId = '') => ({
   workshop: '', workshopPhone: '', workshopLocation: '', invoiceNumber: '', notes: ''
 });
 
-export default function ServiceForm({ open, onClose, service, defaultVehicleId }: {
+export default function ServiceForm({ open, onClose, service, defaultVehicleId, defaultScheduleId }: {
   open: boolean;
   onClose: () => void;
   service?: ServiceRecord | null;
   defaultVehicleId?: string;
+  /** Pre-ticks this schedule item, e.g. when logging a due item from the dashboard */
+  defaultScheduleId?: string;
 }) {
   const { vehicles, services, parts, schedules, reload } = useData();
   const [form, setForm] = useState(blankForm());
@@ -64,12 +66,12 @@ export default function ServiceForm({ open, onClose, service, defaultVehicleId }
       })));
     } else {
       setForm(blankForm(defaultVehicleId));
-      setScheduleIds([]);
+      setScheduleIds(defaultScheduleId ? [defaultScheduleId] : []);
       setPartIds([]);
       setAttachments([]);
       setLines([]);
     }
-  }, [open, service, defaultVehicleId]);
+  }, [open, service, defaultVehicleId, defaultScheduleId]);
 
   const set = (key: keyof ReturnType<typeof blankForm>) => (e: { target: { value: string } }) =>
     setForm(f => ({ ...f, [key]: e.target.value }));
@@ -195,28 +197,28 @@ export default function ServiceForm({ open, onClose, service, defaultVehicleId }
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={service ? 'Update Intake' : 'Service Intake'} size="xl">
+    <Modal open={open} onClose={onClose} title={service ? 'Edit service' : 'Log a service'} size="xl">
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="md:col-span-2">
-          <Label htmlFor="sv-vehicle">Subject Vehicle *</Label>
+          <Label htmlFor="sv-vehicle">Car</Label>
           <select id="sv-vehicle" required value={form.vehicleId} onChange={handleVehicleChange} className={inputClass}>
-            <option value="">Select from Garage</option>
+            <option value="">Choose a car</option>
             {vehicleOptions.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plateNumber})</option>)}
           </select>
         </div>
 
         <div>
-          <Label htmlFor="sv-date">Service Date *</Label>
+          <Label htmlFor="sv-date">Date</Label>
           <input id="sv-date" type="date" required value={form.date} onChange={set('date')} className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="sv-mileage">Odometer Reading (KM) *</Label>
-          <input id="sv-mileage" type="number" required min="0" step="1" value={form.mileage} onChange={set('mileage')}
+          <Label htmlFor="sv-mileage">Odometer (km)</Label>
+          <input id="sv-mileage" type="number" inputMode="numeric" required min="0" step="1" value={form.mileage} onChange={set('mileage')}
             placeholder={currentMileage !== null ? `Last known ${currentMileage}` : 'e.g. 85200'} className={`${inputClass} font-mono`} />
         </div>
 
         <div className="md:col-span-2">
-          <Label htmlFor="sv-type">Type of Work</Label>
+          <Label htmlFor="sv-type">Type</Label>
           <select id="sv-type" value={form.serviceType} onChange={set('serviceType')} className={inputClass}>
             {!form.serviceType && <option value="">Not set</option>}
             {SERVICE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -224,39 +226,39 @@ export default function ServiceForm({ open, onClose, service, defaultVehicleId }
         </div>
 
         <div className="md:col-span-2">
-          <Label>Work Done (Maintenance Schedule)</Label>
-          <div className="flex flex-wrap gap-2 p-4 bg-black border border-white/10 rounded-lg min-h-[60px]">
+          <Label>What was done?</Label>
+          <div className="flex flex-wrap gap-2">
             {vehicleSchedules.map(item => (
               <button
                 type="button"
                 key={item.id}
                 aria-pressed={scheduleIds.includes(item.id)}
                 onClick={() => setScheduleIds(ids => toggle(ids, item.id))}
-                className={`px-3 py-1 rounded-full text-[10px] font-mono uppercase transition-all border ${
+                className={`px-3.5 py-2 rounded-full text-sm font-medium transition-all border ${
                   scheduleIds.includes(item.id) ? 'bg-racing-red border-racing-red text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                 }`}
               >
                 {item.name}
               </button>
             ))}
-            {!form.vehicleId && <span className="text-gray-600 text-xs italic">Select a vehicle first</span>}
+            {!form.vehicleId && <span className="text-gray-500 text-sm">Choose a car first</span>}
             {form.vehicleId && vehicleSchedules.length === 0 && (
-              <span className="text-gray-600 text-xs italic">No schedule for this car yet. Set one up on the car's page to track what's due.</span>
+              <span className="text-gray-500 text-sm">No reminders for this car yet. Add them on the car's page.</span>
             )}
           </div>
         </div>
 
         <div className="md:col-span-2">
-          <Label htmlFor="sv-desc">Description {scheduleIds.length ? '' : '*'}</Label>
+          <Label htmlFor="sv-desc">{scheduleIds.length ? 'Title (optional)' : 'Title'}</Label>
           <input id="sv-desc" maxLength={2000} value={form.description} onChange={set('description')}
-            placeholder={scheduleIds.length ? 'Optional — ticked items are used if blank' : 'e.g. Engine Oil Change & Filter'} className={inputClass} />
+            placeholder={scheduleIds.length ? 'Leave blank to use the ticked items' : 'e.g. Oil change and filter'} className={inputClass} />
         </div>
 
         <div className="md:col-span-2">
-          <Label>Cost Breakdown (Optional)</Label>
+          <Label>Cost breakdown (optional)</Label>
           <div className="space-y-3">
             {lines.map((l, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2 p-3 bg-black/50 border border-white/5 rounded-lg">
+              <div key={i} className="grid grid-cols-12 gap-2 p-3 bg-white/[0.03] border border-white/5 rounded-2xl">
                 <input aria-label="Item" maxLength={200} value={l.description} onChange={e => updateLine(i, 'description', e.target.value)}
                   placeholder="Item, e.g. Oil filter" className={`${cellClass} col-span-12 md:col-span-5`} />
                 <select aria-label="Kind" value={l.kind} onChange={e => updateLine(i, 'kind', e.target.value)} className={`${cellClass} col-span-5 md:col-span-3`}>
@@ -264,15 +266,15 @@ export default function ServiceForm({ open, onClose, service, defaultVehicleId }
                   <option value="labour">Labour</option>
                   <option value="other">Other</option>
                 </select>
-                <input aria-label="Quantity" type="number" min="0.01" step="any" value={l.quantity} onChange={e => updateLine(i, 'quantity', e.target.value)}
+                <input aria-label="Quantity" type="number" inputMode="decimal" min="0.01" step="any" value={l.quantity} onChange={e => updateLine(i, 'quantity', e.target.value)}
                   placeholder="Qty" className={`${cellClass} col-span-3 md:col-span-2 font-mono`} />
-                <input aria-label="Unit price (RM)" type="number" min="0" step="0.01" value={l.unitPrice} onChange={e => updateLine(i, 'unitPrice', e.target.value)}
+                <input aria-label="Unit price (RM)" type="number" inputMode="decimal" min="0" step="0.01" value={l.unitPrice} onChange={e => updateLine(i, 'unitPrice', e.target.value)}
                   placeholder="RM each" className={`${cellClass} col-span-4 md:col-span-2 font-mono`} />
                 <div className="col-span-12 flex items-center justify-between gap-2">
-                  <label className="flex items-center gap-2 text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+                  <label className="flex items-center gap-2 text-xs text-gray-500">
                     Warranty until
                     <input type="date" value={l.warrantyUntil} onChange={e => updateLine(i, 'warrantyUntil', e.target.value)}
-                      className="bg-black border border-white/10 rounded px-2 py-1 text-xs text-white normal-case" />
+                      className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white normal-case" />
                   </label>
                   <button type="button" aria-label="Remove line" onClick={() => setLines(ls => ls.filter((_, j) => j !== i))}
                     className="p-1 text-gray-600 hover:text-racing-red">
@@ -282,44 +284,44 @@ export default function ServiceForm({ open, onClose, service, defaultVehicleId }
               </div>
             ))}
             <button type="button" onClick={() => setLines(ls => [...ls, blankLine()])}
-              className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-gray-400 hover:text-white">
+              className="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-white">
               <Plus className="w-4 h-4" /> Add cost line
             </button>
           </div>
         </div>
 
         <div>
-          <Label htmlFor="sv-cost">Total Project Cost (RM) *</Label>
+          <Label htmlFor="sv-cost">Total cost (RM)</Label>
           {hasLines ? (
             <div id="sv-cost" className={`${inputClass} font-mono text-green-500`}>{formatMYR(lineTotal)}</div>
           ) : (
-            <input id="sv-cost" type="number" required min="0" step="0.01" value={form.cost} onChange={set('cost')} className={`${inputClass} font-mono`} />
+            <input id="sv-cost" type="number" inputMode="decimal" required min="0" step="0.01" value={form.cost} onChange={set('cost')} className={`${inputClass} font-mono`} />
           )}
         </div>
         <div>
-          <Label htmlFor="sv-invoice">Invoice No.</Label>
+          <Label htmlFor="sv-invoice">Invoice no.</Label>
           <input id="sv-invoice" maxLength={50} value={form.invoiceNumber} onChange={set('invoiceNumber')} className={`${inputClass} font-mono`} />
         </div>
 
         <div>
-          <Label htmlFor="sv-workshop">Workshop / Facility</Label>
-          <input id="sv-workshop" list="sv-workshops" maxLength={200} value={form.workshop} onChange={handleWorkshopChange} placeholder="e.g. Performance Lab" className={inputClass} />
+          <Label htmlFor="sv-workshop">Workshop</Label>
+          <input id="sv-workshop" list="sv-workshops" maxLength={200} value={form.workshop} onChange={handleWorkshopChange} placeholder="Leave blank if you did it yourself" className={inputClass} />
           <datalist id="sv-workshops">
             {[...workshops.keys()].map(w => <option key={w} value={w} />)}
           </datalist>
         </div>
         <div>
-          <Label htmlFor="sv-phone">Workshop Phone</Label>
+          <Label htmlFor="sv-phone">Workshop phone</Label>
           <input id="sv-phone" type="tel" maxLength={30} value={form.workshopPhone} onChange={set('workshopPhone')} className={`${inputClass} font-mono`} />
         </div>
         <div className="md:col-span-2">
-          <Label htmlFor="sv-location">Workshop Location</Label>
+          <Label htmlFor="sv-location">Workshop area</Label>
           <input id="sv-location" maxLength={200} value={form.workshopLocation} onChange={set('workshopLocation')} placeholder="e.g. Shah Alam" className={inputClass} />
         </div>
 
         <div className="md:col-span-2">
-          <Label>Parts Applied (Inventory)</Label>
-          <div className="flex flex-wrap gap-2 p-4 bg-black border border-white/10 rounded-lg min-h-[60px]">
+          <Label>Parts used</Label>
+          <div className="flex flex-wrap gap-2">
             {parts.map(part => (
               <button
                 type="button"
@@ -333,16 +335,16 @@ export default function ServiceForm({ open, onClose, service, defaultVehicleId }
                 {part.name}
               </button>
             ))}
-            {parts.length === 0 && <span className="text-gray-600 text-xs italic">No parts available in library</span>}
+            {parts.length === 0 && <span className="text-gray-500 text-sm">No parts saved yet</span>}
           </div>
         </div>
 
         <div className="md:col-span-2">
-          <Label htmlFor="sv-files">Receipts / Photos / Documents</Label>
+          <Label htmlFor="sv-files">Receipts and photos</Label>
           {attachments.length > 0 && (
             <ul className="mb-3 space-y-2">
               {attachments.map((a, i) => (
-                <li key={`${a.url}-${i}`} className="flex items-center justify-between gap-2 px-3 py-2 bg-black/50 border border-white/5 rounded-lg text-xs">
+                <li key={`${a.url}-${i}`} className="flex items-center justify-between gap-2 px-3 py-2.5 bg-white/5 rounded-xl text-sm">
                   <a href={a.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 truncate hover:text-racing-red">
                     <Paperclip className="w-3 h-3 shrink-0" /> <span className="truncate">{a.name}</span>
                   </a>
@@ -356,26 +358,26 @@ export default function ServiceForm({ open, onClose, service, defaultVehicleId }
           )}
           <input id="sv-files" type="file" multiple accept="image/*,application/pdf" onChange={handleFiles} disabled={uploading > 0}
             className={`${inputClass} text-sm`} />
-          <p className="mt-1 text-[10px] font-mono text-gray-500 uppercase tracking-widest flex items-center gap-2">
+          <p className="mt-1 text-xs text-gray-500 flex items-center gap-2">
             {uploading > 0 ? <><Loader2 className="w-3 h-3 animate-spin" /> Uploading {uploading} file(s)...</> : `Images or PDF, up to ${MAX_UPLOAD_MB} MB each`}
           </p>
         </div>
 
         <div className="md:col-span-2">
-          <Label htmlFor="sv-notes">Field Notes</Label>
-          <textarea id="sv-notes" maxLength={2000} value={form.notes} onChange={set('notes')} placeholder="Specific torque values, observed wear, etc..." className={`${inputClass} h-24 resize-none`} />
+          <Label htmlFor="sv-notes">Notes</Label>
+          <textarea id="sv-notes" maxLength={2000} value={form.notes} onChange={set('notes')} placeholder="Anything worth remembering" className={`${inputClass} h-24 resize-none`} />
         </div>
 
         {currentMileage !== null && Number(form.mileage) > 0 && Number(form.mileage) < currentMileage && !service && (
-          <p className="md:col-span-2 text-[10px] font-mono text-amber-400 uppercase tracking-widest">
+          <p className="md:col-span-2 text-xs text-amber-400">
             Heads up: this is lower than the last known reading ({formatKm(currentMileage)}). Fine if you're logging an older service.
           </p>
         )}
 
         <div className="md:col-span-2">
           <FormError message={error} />
-          <button type="submit" disabled={saving || uploading > 0} className="racing-button w-full py-4 text-lg disabled:opacity-50">
-            {saving ? 'Saving...' : uploading > 0 ? 'Waiting for upload...' : service ? 'Commit Changes' : 'Submit Log Entry'}
+          <button type="submit" disabled={saving || uploading > 0} className="racing-button w-full disabled:opacity-50">
+            {saving ? 'Saving…' : uploading > 0 ? 'Uploading…' : service ? 'Save changes' : 'Save service'}
           </button>
         </div>
       </form>

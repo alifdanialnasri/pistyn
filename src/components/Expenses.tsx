@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Wallet, Filter, Calendar, PiggyBank, Info } from 'lucide-react';
+import { PiggyBank, CalendarClock, Car } from 'lucide-react';
 import { useData } from '../lib/DataContext';
 import { formatMYR, formatKm, formatDate, getCurrentMileage, parseDate, addMonths, startOfToday, roundMoney } from '../lib/utils';
 import { serviceTypeLabel, forecast } from '../lib/maintenance';
-import { PageHeader } from './ui';
+import { PageHeader, Chips, Card, SectionTitle, ListGroup, ListRow } from './ui';
 import { ColumnChart, BarList, MONTHS } from './charts';
 
 const sumBy = <T,>(items: T[], key: (item: T) => string, value: (item: T) => number) => {
@@ -49,7 +49,7 @@ export default function Expenses() {
       }));
 
   const byType = sumBy(inPeriod, s => serviceTypeLabel(s.serviceType), s => s.cost);
-  const byVehicle = sumBy(inPeriod, s => vehicles.find(v => v.id === s.vehicleId)?.name ?? 'Unknown Vehicle', s => s.cost);
+  const byVehicle = sumBy(inPeriod, s => vehicles.find(v => v.id === s.vehicleId)?.name ?? 'Unknown car', s => s.cost);
   const withLines = inPeriod.filter(s => s.lineItems?.length);
   const byKind = sumBy(withLines.flatMap(s => s.lineItems!), l => ({ part: 'Parts', labour: 'Labour', other: 'Other' })[l.kind], l => l.quantity * l.unitPrice);
 
@@ -72,152 +72,104 @@ export default function Expenses() {
     .reduce((sum, s) => sum + s.cost, 0);
   const monthlySetAside = roundMoney((f12.total + repairsLast12) / 12);
 
-  const selectClass = 'bg-surface-dark border border-white/5 rounded-xl pl-12 pr-10 py-3 appearance-none focus:outline-none focus:border-racing-red transition-colors w-full md:min-w-[200px]';
-
   return (
-    <div className="space-y-8">
-      <PageHeader kicker="Finance" title="Expenses" />
+    <div className="max-w-2xl lg:max-w-none mx-auto space-y-5">
+      <PageHeader title="Costs" subtitle="What your cars really cost" />
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative">
-          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-          <select aria-label="Vehicle" value={vehicleId} onChange={e => setVehicleId(e.target.value)} className={selectClass}>
-            <option value="">All Vehicles</option>
-            {vehicles.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-          </select>
-        </div>
-        <div className="relative">
-          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-          <select aria-label="Period" value={year} onChange={e => setYear(e.target.value)} className={selectClass}>
-            {years.map(y => <option key={y} value={y}>{y}</option>)}
-            <option value="all">All Time</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Spent', value: formatMYR(total) },
-          { label: 'Services Logged', value: String(inPeriod.length) },
-          { label: 'Average per Month', value: formatMYR(roundMoney(total / monthsInPeriod)) },
-          { label: 'Repairs (Unplanned)', value: formatMYR(repairs) },
-        ].map(stat => (
-          <div key={stat.label} className="racing-panel p-4 md:p-6 rounded-xl">
-            <p className="text-gray-500 text-[10px] font-mono uppercase tracking-wider mb-1">{stat.label}</p>
-            <p className="text-lg md:text-2xl font-bold font-mono tracking-tighter">{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <section className="racing-panel p-5 md:p-8 rounded-2xl">
-        <h3 className="text-lg md:text-xl font-bold italic uppercase tracking-tight mb-6">
-          {year === 'all' ? 'Spending by Year' : `Monthly Spending ${year}`}
-        </h3>
-        <ColumnChart data={chartData} label={year === 'all' ? 'Spending by year' : `Monthly spending in ${year}`} />
-      </section>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <section className="racing-panel p-5 md:p-8 rounded-2xl">
-          <h3 className="text-lg font-bold italic uppercase tracking-tight mb-6">By Type of Work</h3>
-          <BarList rows={byType} empty="No spending in this period." />
-          {byType.some(r => r.label === 'Uncategorised') && (
-            <p className="mt-4 text-[10px] font-mono text-gray-600 uppercase tracking-widest">Tip: edit older services to set their type.</p>
-          )}
-        </section>
-        {!vehicleId ? (
-          <section className="racing-panel p-5 md:p-8 rounded-2xl">
-            <h3 className="text-lg font-bold italic uppercase tracking-tight mb-6">By Vehicle</h3>
-            <BarList rows={byVehicle} empty="No spending in this period." />
-          </section>
-        ) : (
-          <section className="racing-panel p-5 md:p-8 rounded-2xl">
-            <h3 className="text-lg font-bold italic uppercase tracking-tight mb-6">Parts vs Labour</h3>
-            <BarList rows={byKind} empty="Add cost lines when logging services to see this." />
-          </section>
-        )}
-      </div>
-
-      {!vehicleId && (
-        <section className="racing-panel p-5 md:p-8 rounded-2xl">
-          <h3 className="text-lg font-bold italic uppercase tracking-tight mb-2">Parts vs Labour</h3>
-          <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-6">From {withLines.length} of {inPeriod.length} services that have a cost breakdown</p>
-          <BarList rows={byKind} empty="Add cost lines when logging services to see this." />
-        </section>
+      {vehicles.length > 1 && (
+        <Chips label="Car" value={vehicleId} onChange={setVehicleId}
+          options={[{ value: '', label: 'All cars' }, ...vehicles.map(v => ({ value: v.id, label: v.name }))]} />
       )}
+      <Chips label="Period" value={year} onChange={setYear}
+        options={[...years.map(y => ({ value: String(y), label: String(y) })), { value: 'all', label: 'All time' }]} />
 
-      <section className="racing-panel p-5 md:p-8 rounded-2xl">
-        <h3 className="text-lg font-bold italic uppercase tracking-tight mb-6">Running Cost per KM (All Time)</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[480px]">
-            <thead>
-              <tr className="text-[10px] font-mono text-gray-500 uppercase tracking-widest text-left">
-                <th className="pb-3 font-normal">Vehicle</th>
-                <th className="pb-3 font-normal text-right">Spent</th>
-                <th className="pb-3 font-normal text-right">Distance Logged</th>
-                <th className="pb-3 font-normal text-right">RM / KM</th>
-              </tr>
-            </thead>
-            <tbody>
-              {costPerKm.map(({ vehicle, spent, km }) => (
-                <tr key={vehicle.id} className="border-t border-white/5">
-                  <td className="py-3">{vehicle.name}</td>
-                  <td className="py-3 text-right font-mono">{formatMYR(spent)}</td>
-                  <td className="py-3 text-right font-mono">{km > 0 ? formatKm(km) : '—'}</td>
-                  <td className="py-3 text-right font-mono font-bold">{km > 0 ? (spent / km).toFixed(2) : '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="space-y-5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+      <div className="space-y-5">
+      <Card className="p-5">
+        <p className="text-[11px] text-gray-500 uppercase tracking-widest">{year === 'all' ? 'Spent, all time' : `Spent in ${year}`}</p>
+        <p className="text-4xl font-bold font-mono tracking-tight">{formatMYR(total)}</p>
+        <p className="text-sm text-gray-400 mt-1">
+          {formatMYR(roundMoney(total / monthsInPeriod))} a month · {inPeriod.length} service{inPeriod.length === 1 ? '' : 's'}
+          {repairs > 0 && <> · <span className="text-racing-red">{formatMYR(repairs)} repairs</span></>}
+        </p>
+        <div className="mt-5">
+          <ColumnChart data={chartData} label={year === 'all' ? 'Spending by year' : `Monthly spending in ${year}`} />
         </div>
-      </section>
+      </Card>
 
-      <section className="racing-panel p-5 md:p-8 rounded-2xl bg-gradient-to-br from-racing-red/10 to-transparent">
-        <h3 className="text-lg md:text-xl font-bold italic uppercase tracking-tight mb-6 flex items-center gap-3">
-          <PiggyBank className="w-5 h-5 text-racing-red" /> Maintenance Budget Planner
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="md:col-span-1 p-5 bg-black/40 rounded-xl border border-racing-red/30">
-            <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-1">Set Aside Monthly</p>
-            <p className="text-2xl md:text-3xl font-bold font-mono tracking-tighter">{formatMYR(monthlySetAside)}</p>
-          </div>
-          {[{ label: 'Next 3 Months', f: f3 }, { label: 'Next 6 Months', f: f6 }, { label: 'Next 12 Months', f: f12 }].map(({ label, f }) => (
-            <div key={label} className="p-5 bg-black/40 rounded-xl border border-white/5">
-              <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-1">{label}</p>
-              <p className="text-xl font-bold font-mono tracking-tighter">{formatMYR(f.total)}</p>
-              <p className="text-[10px] font-mono text-gray-600 uppercase">{f.entries.length} scheduled job{f.entries.length === 1 ? '' : 's'}</p>
+      <Card className="p-5 bg-gradient-to-br from-racing-red/20 via-surface-dark to-surface-dark border-racing-red/20">
+        <div className="flex items-center gap-2 text-racing-red">
+          <PiggyBank className="w-5 h-5" />
+          <p className="text-[11px] font-semibold uppercase tracking-widest">Put aside each month</p>
+        </div>
+        <p className="text-4xl font-bold font-mono tracking-tight mt-1">{formatMYR(monthlySetAside)}</p>
+        <p className="text-sm text-gray-400 mt-1">Covers upcoming servicing and surprise repairs.</p>
+        <div className="grid grid-cols-3 gap-2 mt-5">
+          {[{ label: '3 months', f: f3 }, { label: '6 months', f: f6 }, { label: '12 months', f: f12 }].map(({ label, f }) => (
+            <div key={label} className="bg-black/30 rounded-2xl p-3">
+              <p className="text-xs text-gray-500">Next {label}</p>
+              <p className="font-bold font-mono text-sm sm:text-base truncate">{formatMYR(f.total)}</p>
             </div>
           ))}
         </div>
-
-        <p className="text-sm text-gray-400 mb-6 flex gap-2">
-          <Info className="w-4 h-4 shrink-0 mt-0.5 text-gray-500" />
-          <span>
-            Set-aside = (scheduled maintenance expected in the next 12 months {formatMYR(f12.total)} + unplanned repairs in the last 12 months {formatMYR(roundMoney(repairsLast12))}) ÷ 12.
-            Saving this each month means routine servicing and surprise repairs are already paid for when they come.
-          </span>
-        </p>
-        {f12.missingCost > 0 && (
-          <p className="text-[10px] font-mono text-amber-400 uppercase tracking-widest mb-6">
-            {f12.missingCost} upcoming schedule item(s) have no estimated cost, so they're not counted. Add costs on each car's schedule.
+        <details className="mt-4 text-sm text-gray-500">
+          <summary className="cursor-pointer select-none text-gray-400">How is this worked out?</summary>
+          <p className="mt-2">
+            Servicing expected in the next 12 months ({formatMYR(f12.total)}) plus repairs in the last 12 months ({formatMYR(roundMoney(repairsLast12))}), divided by 12.
+            {f12.missingCost > 0 && ` ${f12.missingCost} reminder${f12.missingCost === 1 ? ' has' : 's have'} no usual cost, so ${f12.missingCost === 1 ? "it isn't" : "they aren't"} counted.`}
           </p>
-        )}
+        </details>
+      </Card>
 
-        <h4 className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-3">Upcoming Scheduled Costs</h4>
-        <ul className="divide-y divide-white/5">
-          {f12.entries.slice(0, 12).map((e, i) => (
-            <li key={i} className="flex justify-between gap-4 py-2 text-sm">
-              <span className="text-gray-300">{e.itemName} <span className="text-gray-500">· {e.vehicleName}</span></span>
-              <span className="font-mono text-gray-400 whitespace-nowrap">{formatDate(e.date)} · {formatMYR(e.cost)}</span>
-            </li>
-          ))}
-          {f12.entries.length === 0 && (
-            <li className="text-gray-500 text-sm italic py-2 flex items-center gap-2">
-              <Wallet className="w-4 h-4" /> Nothing forecast yet. Set up schedules with estimated costs on each car's page.
-            </li>
-          )}
-        </ul>
-        <p className="mt-4 text-[10px] font-mono text-gray-600 uppercase tracking-widest">Dates for KM-based items are estimates from your average driving.</p>
+      </div>
+
+      <div className="space-y-5">
+      <section>
+        <SectionTitle>Coming up</SectionTitle>
+        {f12.entries.length > 0 ? (
+          <ListGroup>
+            {f12.entries.slice(0, 5).map((e, i) => (
+              <ListRow key={i} icon={CalendarClock} tone="amber" title={e.itemName}
+                subtitle={[!vehicleId && vehicles.length > 1 && e.vehicleName, formatDate(e.date)].filter(Boolean).join(' · ')}
+                trailing={<span className="font-mono text-sm">{formatMYR(e.cost)}</span>} />
+            ))}
+          </ListGroup>
+        ) : (
+          <Card className="px-4 py-3.5 text-gray-400 text-sm">Add a usual cost to each car's reminders to see what's coming.</Card>
+        )}
       </section>
+
+      <section>
+        <SectionTitle>Where it goes</SectionTitle>
+        <Card className="p-5 space-y-6">
+          <BarList rows={byType} empty="No spending in this period." />
+          {!vehicleId && vehicles.length > 1 && byVehicle.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-gray-400 mb-3">By car</p>
+              <BarList rows={byVehicle} empty="" />
+            </div>
+          )}
+          {byKind.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-gray-400 mb-3">Parts vs labour</p>
+              <BarList rows={byKind} empty="" />
+            </div>
+          )}
+        </Card>
+      </section>
+
+      <section>
+        <SectionTitle>Cost per km</SectionTitle>
+        <ListGroup>
+          {costPerKm.map(({ vehicle, spent, km }) => (
+            <ListRow key={vehicle.id} icon={Car} tone="gray" title={vehicle.name}
+              subtitle={km > 0 ? `${formatMYR(spent)} over ${formatKm(km).toLowerCase()}` : 'Needs two odometer readings'}
+              trailing={<span className="font-mono font-bold">{km > 0 ? `RM ${(spent / km).toFixed(2)}` : '—'}</span>} />
+          ))}
+        </ListGroup>
+      </section>
+      </div>
+      </div>
     </div>
   );
 }

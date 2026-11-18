@@ -69,10 +69,10 @@ export default function ScheduleForm({ open, onClose, vehicleId, item }: {
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={item ? 'Edit Schedule Item' : 'Add Schedule Item'}>
+    <Modal open={open} onClose={onClose} title={item ? 'Edit reminder' : 'Add a reminder'}>
       <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-5">
         <div className="col-span-2">
-          <Label htmlFor="sc-name">Item *</Label>
+          <Label htmlFor="sc-name">What needs doing?</Label>
           <input id="sc-name" required maxLength={100} value={form.name} onChange={set('name')} placeholder="e.g. Engine Oil" className={inputClass} />
         </div>
         <div className="col-span-2">
@@ -80,32 +80,32 @@ export default function ScheduleForm({ open, onClose, vehicleId, item }: {
           <input id="sc-cat" maxLength={50} value={form.category} onChange={set('category')} placeholder="e.g. Engine" className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="sc-km">Every (KM)</Label>
-          <input id="sc-km" type="number" min="1" step="1" value={form.intervalKm} onChange={set('intervalKm')} placeholder="5000" className={`${inputClass} font-mono`} />
+          <Label htmlFor="sc-km">Every (km)</Label>
+          <input id="sc-km" type="number" inputMode="numeric" min="1" step="1" value={form.intervalKm} onChange={set('intervalKm')} placeholder="5000" className={`${inputClass} font-mono`} />
         </div>
         <div>
-          <Label htmlFor="sc-months">Every (Months)</Label>
-          <input id="sc-months" type="number" min="1" step="1" value={form.intervalMonths} onChange={set('intervalMonths')} placeholder="6" className={`${inputClass} font-mono`} />
+          <Label htmlFor="sc-months">Every (months)</Label>
+          <input id="sc-months" type="number" inputMode="numeric" min="1" step="1" value={form.intervalMonths} onChange={set('intervalMonths')} placeholder="6" className={`${inputClass} font-mono`} />
         </div>
-        <p className="col-span-2 -mt-2 text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+        <p className="col-span-2 -mt-2 text-xs text-gray-500">
           Due at whichever comes first. Check your owner's manual for the right interval.
         </p>
         <div>
-          <Label htmlFor="sc-cost">Estimated Cost (RM)</Label>
-          <input id="sc-cost" type="number" min="0" step="0.01" value={form.estimatedCost} onChange={set('estimatedCost')} placeholder="Used for budgeting" className={`${inputClass} font-mono`} />
+          <Label htmlFor="sc-cost">Usual cost (RM)</Label>
+          <input id="sc-cost" type="number" inputMode="decimal" min="0" step="0.01" value={form.estimatedCost} onChange={set('estimatedCost')} placeholder="For your budget" className={`${inputClass} font-mono`} />
         </div>
         <div className="col-span-2 pt-2 border-t border-white/5">
-          <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-4">
+          <p className="text-xs text-gray-500 mb-4">
             Last done before using Pistyn? (e.g. from your paper service book) — services you log later will take over automatically.
           </p>
         </div>
         <div>
-          <Label htmlFor="sc-ldate">Last Done Date</Label>
+          <Label htmlFor="sc-ldate">Last done on</Label>
           <input id="sc-ldate" type="date" value={form.lastDoneDate} onChange={set('lastDoneDate')} className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="sc-lkm">Last Done At (KM)</Label>
-          <input id="sc-lkm" type="number" min="0" step="1" value={form.lastDoneMileage} onChange={set('lastDoneMileage')} className={`${inputClass} font-mono`} />
+          <Label htmlFor="sc-lkm">Last done at (km)</Label>
+          <input id="sc-lkm" type="number" inputMode="numeric" min="0" step="1" value={form.lastDoneMileage} onChange={set('lastDoneMileage')} className={`${inputClass} font-mono`} />
         </div>
         <div className="col-span-2">
           <Label htmlFor="sc-notes">Notes</Label>
@@ -113,8 +113,8 @@ export default function ScheduleForm({ open, onClose, vehicleId, item }: {
         </div>
         <div className="col-span-2">
           <FormError message={error} />
-          <button type="submit" disabled={saving} className="racing-button w-full py-4 text-lg disabled:opacity-50">
-            {saving ? 'Saving...' : item ? 'Save Item' : 'Add to Schedule'}
+          <button type="submit" disabled={saving} className="racing-button w-full disabled:opacity-50">
+            {saving ? 'Saving…' : item ? 'Save changes' : 'Add reminder'}
           </button>
         </div>
       </form>

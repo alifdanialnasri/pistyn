@@ -117,12 +117,12 @@ function PaymentForm({ open, onClose, users, defaultUser, onSaved }: {
         </div>
         <div>
           <Label htmlFor="pay-months">Months Covered *</Label>
-          <input id="pay-months" type="number" min="0" step="1" disabled={form.plan === 'other'} value={form.months}
+          <input id="pay-months" type="number" inputMode="numeric" min="0" step="1" disabled={form.plan === 'other'} value={form.months}
             onChange={e => changeMonths(e.target.value)} className={`${inputClass} font-mono`} />
         </div>
         <div>
           <Label htmlFor="pay-amount">Amount Received (RM) *</Label>
-          <input id="pay-amount" type="number" required min="0" step="0.01" value={form.amount} onChange={set('amount')} className={`${inputClass} font-mono`} />
+          <input id="pay-amount" type="number" inputMode="decimal" required min="0" step="0.01" value={form.amount} onChange={set('amount')} className={`${inputClass} font-mono`} />
         </div>
         <div>
           <Label htmlFor="pay-date">Paid On *</Label>

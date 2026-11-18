@@ -18,6 +18,7 @@ import Parts from './components/Parts';
 import BackupModal from './components/BackupModal';
 import PrintReport from './components/PrintReport';
 import Admin from './components/Admin';
+import ServiceForm from './components/ServiceForm';
 import { DataProvider, useData } from './lib/DataContext';
 import { LoadingBar } from './components/ui';
 import { DEMO_MODE } from './lib/demoConfig';
@@ -31,6 +32,9 @@ function Workspace({ isAdmin, profile }: { isAdmin: boolean; profile: UserProfil
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [backupOpen, setBackupOpen] = useState(false);
   const [reportVehicleId, setReportVehicleId] = useState<string | null>(null);
+  // Quick "log a service" from the tab bar or the dashboard, optionally for a due schedule item
+  const [quickLog, setQuickLog] = useState<{ vehicleId?: string; scheduleId?: string } | null>(null);
+  const logService = useCallback((vehicleId?: string, scheduleId?: string) => setQuickLog({ vehicleId, scheduleId }), []);
 
   const selectTab = useCallback((tab: string) => {
     setActiveTab(tab);
@@ -78,25 +82,25 @@ function Workspace({ isAdmin, profile }: { isAdmin: boolean; profile: UserProfil
           ? <VehicleDetail vehicleId={selectedVehicleId} onBack={closeVehicle} onPrint={setReportVehicleId} />
           : <Vehicles onOpenVehicle={openVehicle} />;
       case 'services': return <Services />;
-      case 'issues': return <Issues onOpenVehicle={openVehicle} />;
+      case 'issues': return <Issues />;
       case 'expenses': return <Expenses />;
       case 'parts': return <Parts />;
-      case 'admin': return isAdmin ? <Admin /> : <Dashboard setActiveTab={selectTab} onOpenVehicle={openVehicle} />;
-      default: return <Dashboard setActiveTab={selectTab} onOpenVehicle={openVehicle} />;
+      case 'admin': return isAdmin ? <Admin /> : <Dashboard setActiveTab={selectTab} onOpenVehicle={openVehicle} onLogService={logService} />;
+      default: return <Dashboard setActiveTab={selectTab} onOpenVehicle={openVehicle} onLogService={logService} />;
     }
   };
 
   return (
     <>
-      <div className="flex min-h-screen bg-carbon-black bg-carbon overflow-hidden text-sm md:text-base relative print:hidden">
+      <div className="flex min-h-dvh bg-carbon-black bg-carbon overflow-hidden text-sm md:text-base relative print:hidden">
         {DEMO_MODE && (
-          <div className="fixed top-0 left-0 right-0 z-[100] bg-racing-red text-white py-1 text-center font-mono text-[10px] tracking-[0.2em] uppercase font-bold border-b border-white/20 select-none pointer-events-none">
+          <div className="fixed top-0 left-0 right-0 z-[100] bg-racing-red text-white pb-1 pt-[calc(0.25rem+env(safe-area-inset-top,0px))] text-center font-mono text-[10px] tracking-[0.2em] uppercase font-bold border-b border-white/20 select-none pointer-events-none">
             DEMO MODE ACTIVE • DATA SAVED ON THIS DEVICE
           </div>
         )}
-        <Sidebar activeTab={activeTab} setActiveTab={selectTab} onOpenBackup={() => setBackupOpen(true)} isAdmin={isAdmin} profile={profile} />
-        <main id="main-scroll" className={`flex-1 overflow-y-auto h-screen p-4 md:p-8 bg-black/20 ${DEMO_MODE ? 'pt-24 lg:pt-12' : 'pt-20 lg:pt-8'}`}>
-          <div className="max-w-6xl mx-auto">
+        <Sidebar activeTab={activeTab} setActiveTab={selectTab} onOpenBackup={() => setBackupOpen(true)} onNewService={() => logService()} isAdmin={isAdmin} profile={profile} />
+        <main id="main-scroll" className={`flex-1 overflow-y-auto overscroll-contain h-dvh p-4 md:p-8 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8 bg-black/20 ${DEMO_MODE ? 'pt-[calc(6rem+env(safe-area-inset-top,0px))] lg:pt-12' : 'pt-[calc(5rem+env(safe-area-inset-top,0px))] lg:pt-8'}`}>
+          <div className="max-w-[1600px] mx-auto">
             {error && vehicles.length > 0 && (
               <p role="alert" className="mb-6 bg-racing-red/10 border border-racing-red/20 p-3 rounded-lg text-[11px] text-racing-red font-mono uppercase">
                 Showing saved data. Latest refresh failed: {error}
@@ -107,6 +111,12 @@ function Workspace({ isAdmin, profile }: { isAdmin: boolean; profile: UserProfil
         </main>
       </div>
       <BackupModal open={backupOpen} onClose={() => setBackupOpen(false)} />
+      <ServiceForm
+        open={quickLog !== null}
+        onClose={() => setQuickLog(null)}
+        defaultVehicleId={quickLog?.vehicleId}
+        defaultScheduleId={quickLog?.scheduleId}
+      />
       {reportVehicleId && <PrintReport vehicleId={reportVehicleId} />}
     </>
   );
@@ -134,7 +144,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-carbon-black bg-carbon">
+      <div className="min-h-dvh flex items-center justify-center bg-carbon-black bg-carbon">
         <div className="w-16 h-1 bg-racing-red animate-pulse"></div>
       </div>
     );

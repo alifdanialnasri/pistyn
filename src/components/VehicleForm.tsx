@@ -88,21 +88,21 @@ export default function VehicleForm({ open, onClose, vehicle, onSaved }: {
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={vehicle ? 'Update Vehicle Details' : 'Register New Fleet Member'} size="xl">
+    <Modal open={open} onClose={onClose} title={vehicle ? 'Edit car' : 'Add a car'} size="xl">
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="md:col-span-2">
-          <Label htmlFor="v-name">Vehicle Name / Nickname *</Label>
+          <Label htmlFor="v-name">Name</Label>
           <input id="v-name" required maxLength={100} value={form.name} onChange={set('name')} placeholder="e.g. Skyline R34" className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="v-plate">Plate Number *</Label>
+          <Label htmlFor="v-plate">Plate number</Label>
           <input id="v-plate" required maxLength={20} value={form.plateNumber} onChange={set('plateNumber')} placeholder="ABC 1234" className={`${inputClass} font-mono`} />
         </div>
         <div>
-          <Label htmlFor="v-mileage">Current Mileage (KM)</Label>
-          <input id="v-mileage" type="number" min="0" step="1" value={form.currentMileage} onChange={set('currentMileage')} placeholder="e.g. 85200" className={`${inputClass} font-mono`} />
+          <Label htmlFor="v-mileage">Odometer now (km)</Label>
+          <input id="v-mileage" type="number" inputMode="numeric" min="0" step="1" value={form.currentMileage} onChange={set('currentMileage')} placeholder="e.g. 85200" className={`${inputClass} font-mono`} />
           {latestKnown !== null && (
-            <p className="mt-1 text-[10px] font-mono text-gray-500 uppercase tracking-widest">Latest known: {formatKm(latestKnown)}</p>
+            <p className="mt-1 text-xs text-gray-500">Last recorded: {formatKm(latestKnown).toLowerCase()}</p>
           )}
         </div>
         <div>
@@ -110,45 +110,45 @@ export default function VehicleForm({ open, onClose, vehicle, onSaved }: {
           <input id="v-make" maxLength={50} value={form.make} onChange={set('make')} placeholder="e.g. Perodua" className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="v-model">Model / Variant</Label>
+          <Label htmlFor="v-model">Model</Label>
           <input id="v-model" maxLength={50} value={form.model} onChange={set('model')} placeholder="e.g. Myvi 1.5 AV" className={inputClass} />
         </div>
         <div>
           <Label htmlFor="v-year">Year</Label>
-          <input id="v-year" type="number" min="1900" max="2100" step="1" value={form.year} onChange={set('year')} placeholder="e.g. 2019" className={`${inputClass} font-mono`} />
+          <input id="v-year" type="number" inputMode="numeric" min="1900" max="2100" step="1" value={form.year} onChange={set('year')} placeholder="e.g. 2019" className={`${inputClass} font-mono`} />
         </div>
         <div>
-          <Label htmlFor="v-vin">Chassis No. (VIN)</Label>
+          <Label htmlFor="v-vin">Chassis no.</Label>
           <input id="v-vin" maxLength={40} value={form.vin} onChange={set('vin')} className={`${inputClass} font-mono`} />
         </div>
         <div>
-          <Label htmlFor="v-engine">Engine No.</Label>
+          <Label htmlFor="v-engine">Engine no.</Label>
           <input id="v-engine" maxLength={40} value={form.engineNumber} onChange={set('engineNumber')} className={`${inputClass} font-mono`} />
         </div>
         <div>
-          <Label htmlFor="v-pdate">Purchase Date</Label>
+          <Label htmlFor="v-pdate">Date bought</Label>
           <input id="v-pdate" type="date" value={form.purchaseDate} onChange={set('purchaseDate')} className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="v-pmileage">Mileage When Bought (KM)</Label>
-          <input id="v-pmileage" type="number" min="0" step="1" value={form.purchaseMileage} onChange={set('purchaseMileage')} className={`${inputClass} font-mono`} />
+          <Label htmlFor="v-pmileage">Odometer when bought (km)</Label>
+          <input id="v-pmileage" type="number" inputMode="numeric" min="0" step="1" value={form.purchaseMileage} onChange={set('purchaseMileage')} className={`${inputClass} font-mono`} />
         </div>
         <div>
-          <Label htmlFor="v-roadtax">Road Tax Expiry</Label>
+          <Label htmlFor="v-roadtax">Road tax expires</Label>
           <input id="v-roadtax" type="date" value={form.roadTaxExpiry} onChange={set('roadTaxExpiry')} className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="v-insurance">Insurance Expiry</Label>
+          <Label htmlFor="v-insurance">Insurance expires</Label>
           <input id="v-insurance" type="date" value={form.insuranceExpiry} onChange={set('insuranceExpiry')} className={inputClass} />
         </div>
         <div className="md:col-span-2">
-          <Label htmlFor="v-notes">Internal Notes</Label>
-          <textarea id="v-notes" maxLength={1000} value={form.notes} onChange={set('notes')} placeholder="Engine specs, modifications, etc..." className={`${inputClass} h-24 resize-none`} />
+          <Label htmlFor="v-notes">Notes</Label>
+          <textarea id="v-notes" maxLength={1000} value={form.notes} onChange={set('notes')} placeholder="Mods, quirks, anything worth remembering" className={`${inputClass} h-24 resize-none`} />
         </div>
         <div className="md:col-span-2">
           <FormError message={error} />
-          <button type="submit" disabled={saving} className="racing-button w-full py-4 text-lg disabled:opacity-50">
-            {saving ? 'Saving...' : vehicle ? 'Apply Modifications' : 'Confirm Registration'}
+          <button type="submit" disabled={saving} className="racing-button w-full disabled:opacity-50">
+            {saving ? 'Saving…' : vehicle ? 'Save changes' : 'Add car'}
           </button>
         </div>
       </form>

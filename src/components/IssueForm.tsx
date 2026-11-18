@@ -74,28 +74,28 @@ export default function IssueForm({ open, onClose, issue, defaultVehicleId }: {
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={issue ? 'Edit Issue' : 'Report Issue'} size="xl">
+    <Modal open={open} onClose={onClose} title={issue ? 'Edit issue' : 'Report an issue'} size="xl">
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="md:col-span-2">
-          <Label htmlFor="is-vehicle">Vehicle *</Label>
+          <Label htmlFor="is-vehicle">Car</Label>
           <select id="is-vehicle" required disabled={!!issue} value={form.vehicleId} onChange={set('vehicleId')} className={inputClass}>
-            <option value="">Select from Garage</option>
+            <option value="">Choose a car</option>
             {vehicleOptions.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plateNumber})</option>)}
           </select>
         </div>
         <div className="md:col-span-2">
-          <Label htmlFor="is-title">What's the problem? *</Label>
+          <Label htmlFor="is-title">What's wrong?</Label>
           <input id="is-title" required maxLength={150} value={form.title} onChange={set('title')} placeholder="e.g. Squeaking noise when braking" className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="is-source">Source</Label>
+          <Label htmlFor="is-source">Who spotted it?</Label>
           <select id="is-source" value={form.source} onChange={set('source')} className={inputClass}>
             <option value="observed">I noticed it</option>
             <option value="workshop">Workshop recommended</option>
           </select>
         </div>
         <div>
-          <Label htmlFor="is-severity">Severity</Label>
+          <Label htmlFor="is-severity">Priority</Label>
           <select id="is-severity" value={form.severity} onChange={set('severity')} className={inputClass}>
             <option value="low">Low — monitor</option>
             <option value="medium">Medium — fix soon</option>
@@ -103,20 +103,20 @@ export default function IssueForm({ open, onClose, issue, defaultVehicleId }: {
           </select>
         </div>
         <div>
-          <Label htmlFor="is-rdate">Noticed On *</Label>
+          <Label htmlFor="is-rdate">Noticed on</Label>
           <input id="is-rdate" type="date" required value={form.reportedDate} onChange={set('reportedDate')} className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="is-rkm">Mileage Then (KM)</Label>
-          <input id="is-rkm" type="number" min="0" step="1" value={form.reportedMileage} onChange={set('reportedMileage')} className={`${inputClass} font-mono`} />
+          <Label htmlFor="is-rkm">Odometer then (km)</Label>
+          <input id="is-rkm" type="number" inputMode="numeric" min="0" step="1" value={form.reportedMileage} onChange={set('reportedMileage')} className={`${inputClass} font-mono`} />
         </div>
         <div>
-          <Label htmlFor="is-ddate">Fix By Date</Label>
+          <Label htmlFor="is-ddate">Fix by (date)</Label>
           <input id="is-ddate" type="date" value={form.dueDate} onChange={set('dueDate')} className={inputClass} />
         </div>
         <div>
-          <Label htmlFor="is-dkm">Fix By Mileage (KM)</Label>
-          <input id="is-dkm" type="number" min="0" step="1" value={form.dueMileage} onChange={set('dueMileage')} placeholder="e.g. within 5,000 km" className={`${inputClass} font-mono`} />
+          <Label htmlFor="is-dkm">Fix by (km)</Label>
+          <input id="is-dkm" type="number" inputMode="numeric" min="0" step="1" value={form.dueMileage} onChange={set('dueMileage')} placeholder="e.g. within 5,000 km" className={`${inputClass} font-mono`} />
         </div>
         <div className="md:col-span-2">
           <Label htmlFor="is-details">Details</Label>
@@ -128,12 +128,12 @@ export default function IssueForm({ open, onClose, issue, defaultVehicleId }: {
               <Label htmlFor="is-status">Status</Label>
               <select id="is-status" value={form.status} onChange={set('status')} className={inputClass}>
                 <option value="open">Open</option>
-                <option value="resolved">Resolved</option>
+                <option value="resolved">Fixed</option>
               </select>
             </div>
             {form.status === 'resolved' && (
               <div>
-                <Label htmlFor="is-resdate">Resolved On</Label>
+                <Label htmlFor="is-resdate">Fixed on</Label>
                 <input id="is-resdate" type="date" value={form.resolvedDate || todayISO()} onChange={set('resolvedDate')} className={inputClass} />
               </div>
             )}
@@ -141,8 +141,8 @@ export default function IssueForm({ open, onClose, issue, defaultVehicleId }: {
         )}
         <div className="md:col-span-2">
           <FormError message={error} />
-          <button type="submit" disabled={saving} className="racing-button w-full py-4 text-lg disabled:opacity-50">
-            {saving ? 'Saving...' : issue ? 'Save Issue' : 'Log Issue'}
+          <button type="submit" disabled={saving} className="racing-button w-full disabled:opacity-50">
+            {saving ? 'Saving…' : issue ? 'Save changes' : 'Save issue'}
           </button>
         </div>
       </form>

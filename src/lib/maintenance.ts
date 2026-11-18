@@ -7,9 +7,9 @@ export const SOON_KM = 1000;
 export const SOON_DAYS = 30;
 
 export const SERVICE_TYPES: { value: ServiceType; label: string }[] = [
-  { value: 'maintenance', label: 'Routine Maintenance' },
+  { value: 'maintenance', label: 'Maintenance' },
   { value: 'repair', label: 'Repair' },
-  { value: 'upgrade', label: 'Upgrade / Mod' },
+  { value: 'upgrade', label: 'Upgrade' },
   { value: 'inspection', label: 'Inspection' },
   { value: 'other', label: 'Other' },
 ];
@@ -168,6 +168,8 @@ export interface Alert {
   title: string;
   detail: string;
   status: 'overdue' | 'soon';
+  /** Set for schedule items, so the alert can be logged as done */
+  scheduleId?: string;
 }
 
 export function describeDue(state: ScheduleState) {
@@ -187,7 +189,7 @@ export function getAlerts(vehicles: Vehicle[], services: ServiceRecord[], schedu
     schedules.filter(s => s.vehicleId === vehicle.id).forEach(item => {
       const state = getScheduleState(item, vehicle, services);
       if (state.status === 'overdue' || state.status === 'soon') {
-        alerts.push({ key: `s-${item.id}`, vehicleId: vehicle.id, vehicleName: vehicle.name, title: item.name, detail: describeDue(state), status: state.status });
+        alerts.push({ key: `s-${item.id}`, vehicleId: vehicle.id, vehicleName: vehicle.name, title: item.name, detail: describeDue(state), status: state.status, scheduleId: item.id });
       }
     });
     getRenewals(vehicle).forEach(r => {
